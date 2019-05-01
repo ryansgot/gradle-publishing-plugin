@@ -1,3 +1,16 @@
+buildscript {
+    ext.keys = [
+            'aws': [
+                    'accessKeyId': project.hasProperty("awsMavenAccessKey") ? project.property("awsMavenAccessKey") : "${System.env.AWS_ACCES_KEY_ID}",
+                    'secretKey': project.hasProperty("awsMavenSecretKey") ? project.property("awsMavenSecretKey") : "${System.env.AWS_SECRET_KEY}",
+            ],
+            'bintray': [
+                    'user': project.hasProperty('bintrayUser') ? project.getProperty('bintrayUser') : '',
+                    'apiKey': project.hasProperty('bintrayApiKey') ? project.getProperty('bintrayApiKey') : ''
+            ]
+    ]
+}
+
 apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
