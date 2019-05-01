@@ -1,0 +1,81 @@
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+group 'com.fsryan.gradle'
+version '0.0.1'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+
+    testCompile 'junit:junit:4.12'
+}
+
+def siteUrl = 'https://github.com/ryansgot/gradle-publishing-plugin'
+def pomConfig = {
+    developers {
+        developer {
+            id 'fsryan'
+            name 'Ryan Scott'
+            email 'fsryan.developer@gmail.com'
+        }
+    }
+    scm {
+        connection "${siteUrl}.git"
+        developerConnection "${siteUrl}.git"
+        url siteUrl
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name 'release'
+            url 's3://fsryan-android-maven-repo/release'
+            credentials(AwsCredentials) {
+                accessKey = keys.aws.accessKeyId
+                secretKey = keys.aws.secretKey
+            }
+        }
+        maven {
+            name 'snapshot'
+            url 's3://fsryan-android-maven-repo/release'
+            credentials(AwsCredentials) {
+                accessKey = keys.aws.accessKeyId
+                secretKey = keys.aws.secretKey
+            }
+        }
+    }
+    publications {
+        plugin(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            groupId project.group
+            artifactId 'fsryan-gradle-publishing'
+            version project.version
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('description', 'Gradle plugin providing tasks for publishing libraries to a maven repository')
+                root.appendNode('name', 'fsryan-gradle-publishing')
+                root.appendNode('url', siteUrl)
+                root.children().last() + pomConfig
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.groovy.srcDirs
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
