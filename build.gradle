@@ -57,7 +57,7 @@ publishing {
         }
         maven {
             name 'snapshot'
-            url 's3://repo.fsryan.com/release'
+            url 's3://repo.fsryan.com/snapshot'
             credentials(AwsCredentials) {
                 accessKey = keys.aws.accessKeyId
                 secretKey = keys.aws.secretKey
