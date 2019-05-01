@@ -17,7 +17,7 @@ class FSPublishingPlugin implements Plugin<Project> {
         // most of this was taken from here:
         // https://stackoverflow.com/questions/34331713/publishing-android-library-aar-to-bintray-with-chosen-flavors
 
-        def fsPublishingExt = project.extensions.create("`", FSPublishingExtension, project)
+        def fsPublishingExt = project.extensions.create("fsPublishingConfig", FSPublishingExtension, project)
         project.afterEvaluate {
             def pomConfig = {
                 developers {
