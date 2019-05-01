@@ -49,7 +49,7 @@ publishing {
     repositories {
         maven {
             name 'release'
-            url 's3://fsryan-android-maven-repo/release'
+            url 's3://repo.fsryan.com/release'
             credentials(AwsCredentials) {
                 accessKey = keys.aws.accessKeyId
                 secretKey = keys.aws.secretKey
@@ -57,7 +57,7 @@ publishing {
         }
         maven {
             name 'snapshot'
-            url 's3://fsryan-android-maven-repo/release'
+            url 's3://repo.fsryan.com/release'
             credentials(AwsCredentials) {
                 accessKey = keys.aws.accessKeyId
                 secretKey = keys.aws.secretKey
