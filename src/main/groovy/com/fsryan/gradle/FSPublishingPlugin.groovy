@@ -2,6 +2,7 @@ package com.fsryan.gradle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.credentials.AwsCredentials
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.javadoc.Javadoc
@@ -40,16 +41,16 @@ class FSPublishingPlugin implements Plugin<Project> {
                         name fsPublishingExt.releaseRepoName
                         url fsPublishingExt.releaseRepoUrl
                         credentials(AwsCredentials) {
-                            accessKey = keys.aws.accessKeyId
-                            secretKey = keys.aws.secretKey
+                            accessKey = fsPublishingExt.awsAccessKeyId
+                            secretKey = fsPublishingExt.awsSecretKey
                         }
                     }
                     maven {
                         name fsPublishingExt.snapshotRepoName
                         url fsPublishingExt.snapshotRepoUrl
                         credentials(AwsCredentials) {
-                            accessKey = keys.aws.accessKeyId
-                            secretKey = keys.aws.secretKey
+                            accessKey = fsPublishingExt.awsAccessKeyId
+                            secretKey = fsPublishingExt.awsSecretKey
                         }
                     }
                 }

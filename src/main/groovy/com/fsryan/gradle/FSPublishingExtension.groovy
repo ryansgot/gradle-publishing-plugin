@@ -15,6 +15,8 @@ class FSPublishingExtension {
     String snapshotRepoName = 'snapshot'
     String snapshotRepoUrl
     String description = ""
+    String awsAccessKeyId
+    String awsSecretKey
     /**
      * <p>If you want to add properties to the pom, then you can do so via this
      * map. For example, if you want to leave some breadcrumbs that take you
