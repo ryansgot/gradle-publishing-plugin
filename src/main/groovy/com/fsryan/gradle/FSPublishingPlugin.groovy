@@ -171,10 +171,20 @@ class FSPublishingPlugin implements Plugin<Project> {
                             }
                         }
                     } else /* assume java library */ {
+
+                        def sourcesJar = project.tasks.findByName("sourcesJar") ?: project.task("sourcesJar", type: Jar,  dependsOn: 'classes') {
+                            from project.sourceSets.main.allJava
+                            archiveClassifier = 'sources'
+                        }
+
+                        def javadocJar = project.tasks.findByName("javadocJar") ?: project.task("javadocJar", type: Jar, dependsOn: 'javadoc') {
+                            from project.javadoc
+                            archiveClassifier = 'javadoc'
+                        }
                         maven(MavenPublication) {
                             from project.components.java
-                            artifact project.sourcesJar
-                            artifact project.javadocJar
+                            artifact sourcesJar
+                            artifact javadocJar
                             groupId fsPublishingExt.groupId
                             artifactId fsPublishingExt.baseArtifactId
                             version "${fsPublishingExt.versionName}${appendingVersionSuffix(project) ? "-${project.property('fsryan.versionSuffix')}" : ''}"
@@ -233,17 +243,8 @@ class FSPublishingPlugin implements Plugin<Project> {
                 }
             } else /* assume java project */ {
                 project.javadoc.failOnError false
-                def javadocTask = project.tasks.findByName('javadoc')
-                def javadocJarTask = project.tasks.create(name: "javadocJar", type: Jar, dependsOn: javadocTask) {
-                    classifier = 'javadoc'
-                    from javadocTask.destinationDir
-                }
-
-                def classesTask = project.tasks.findByName('classes')
-                def sourcesJarTask = project.tasks.create(name: "sourcesJar", type: Jar, dependsOn: classesTask) {
-                    classifier = 'sources'
-                    from project.sourceSets.main.allSource
-                }
+                def javadocJarTask = project.tasks.findByName("javadocJar")
+                def sourcesJarTask = project.tasks.findByName("sourcesJar")
 
                 project.artifacts {
                     archives javadocJarTask
