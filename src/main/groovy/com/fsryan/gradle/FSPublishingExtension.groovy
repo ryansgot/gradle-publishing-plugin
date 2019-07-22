@@ -17,6 +17,7 @@ class FSPublishingExtension {
     String description = ""
     String awsAccessKeyId
     String awsSecretKey
+    List<String> additionalPublications = new ArrayList<>()
     /**
      * <p>If you want to add properties to the pom, then you can do so via this
      * map. For example, if you want to leave some breadcrumbs that take you
