@@ -111,60 +111,64 @@ class FSPublishingPlugin implements Plugin<Project> {
                                 classifier = 'sources'
                             }
 
-                            def publicationName = "${project.name}${variant.name.capitalize()}"
+                            def publicationNames = ["${project.name}${variant.name.capitalize()}"]
+                            fsPublishingExt.additionalPublications.forEach { additional ->
+                                publicationNames.add("${project.name}${variant.name.capitalize()}To${additional.capitalize()}")
+                            }
+                            publicationNames.forEach { publicationName ->
+                                "$publicationName"(MavenPublication) {
+                                    artifactId = variantArtifactId
+                                    groupId = fsPublishingExt.groupId
+                                    version = "${fsPublishingExt.versionName}${appendingVersionSuffix(project) ? "-${project.property('fsryan.versionSuffix')}" : ''}"
 
-                            "$publicationName"(MavenPublication) {
-                                artifactId = variantArtifactId
-                                groupId = fsPublishingExt.groupId
-                                version = "${fsPublishingExt.versionName}${appendingVersionSuffix(project) ? "-${project.property('fsryan.versionSuffix')}" : ''}"
+                                    artifact variant.outputs[0].packageLibrary // This is the aar library
+                                    artifact sourcesJar
+                                    artifact javadocJar
 
-                                artifact variant.outputs[0].packageLibrary // This is the aar library
-                                artifact sourcesJar
-                                artifact javadocJar
+                                    pom {
+                                        packaging 'aar'
+                                        withXml {
+                                            def root = asNode()
+                                            if (fsPublishingExt.description != "") {
+                                                root.appendNode('description', fsPublishingExt.description)
+                                            }
+                                            root.appendNode("name", variantArtifactId)
+                                            root.appendNode("url", fsPublishingExt.siteUrl)
+                                            root.children().last() + pomConfig
 
-                                pom {
-                                    packaging 'aar'
-                                    withXml {
-                                        def root = asNode()
-                                        if (fsPublishingExt.description != "") {
-                                            root.appendNode('description', fsPublishingExt.description)
-                                        }
-                                        root.appendNode("name", variantArtifactId)
-                                        root.appendNode("url", fsPublishingExt.siteUrl)
-                                        root.children().last() + pomConfig
-
-                                        // add properties
-                                        def propsNode = root["properties"][0] ?: root.appendNode("properties")
-                                        fsPublishingExt.extraPomProperties.forEach { k,v ->
-                                            propsNode.appendNode(k, v)
-                                        }
-
-                                        // add dependencies
-                                        def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
-                                        def addDep = {
-                                            if (it.group == null) {
-                                                LOGGER.debug("$publicationName: Not adding dependency $it: group was null")
-                                                return  // Avoid empty dependency nodes
+                                            // add properties
+                                            def propsNode = root["properties"][0] ?: root.appendNode("properties")
+                                            fsPublishingExt.extraPomProperties.forEach { k,v ->
+                                                propsNode.appendNode(k, v)
                                             }
 
-                                            LOGGER.debug("$publicationName: Adding dependency ${it.group}:${it.name}:${it.version}")
-                                            def dependencyNode = depsNode.appendNode('dependency')
-                                            dependencyNode.appendNode('groupId', it.group)
-                                            dependencyNode.appendNode('artifactId', it.name)
-                                            dependencyNode.appendNode('version', it.version)
-                                            if (it.hasProperty('optional') && it.optional) {
-                                                dependencyNode.appendNode('optional', 'true')
-                                            }
-                                        }
+                                            // add dependencies
+                                            def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
+                                            def addDep = {
+                                                if (it.group == null) {
+                                                    LOGGER.debug("$publicationName: Not adding dependency $it: group was null")
+                                                    return  // Avoid empty dependency nodes
+                                                }
 
-                                        // Add deps that each variant has
-                                        project.configurations.implementation.allDependencies.each addDep
-                                        // add deps specified for variants of this build type
-                                        project.configurations["${variant.buildType.name}Implementation"].allDependencies.each addDep
-                                        if (flavored) {
-                                            project.configurations["${variant.flavorName}Implementation"].allDependencies.each addDep
-                                            project.configurations["${variant.flavorName}${variant.buildType.name.capitalize()}Implementation"].allDependencies.each addDep
-                                            project.configurations["${variant.name}Implementation"].allDependencies.each addDep
+                                                LOGGER.debug("$publicationName: Adding dependency ${it.group}:${it.name}:${it.version}")
+                                                def dependencyNode = depsNode.appendNode('dependency')
+                                                dependencyNode.appendNode('groupId', it.group)
+                                                dependencyNode.appendNode('artifactId', it.name)
+                                                dependencyNode.appendNode('version', it.version)
+                                                if (it.hasProperty('optional') && it.optional) {
+                                                    dependencyNode.appendNode('optional', 'true')
+                                                }
+                                            }
+
+                                            // Add deps that each variant has
+                                            project.configurations.implementation.allDependencies.each addDep
+                                            // add deps specified for variants of this build type
+                                            project.configurations["${variant.buildType.name}Implementation"].allDependencies.each addDep
+                                            if (flavored) {
+                                                project.configurations["${variant.flavorName}Implementation"].allDependencies.each addDep
+                                                project.configurations["${variant.flavorName}${variant.buildType.name.capitalize()}Implementation"].allDependencies.each addDep
+                                                project.configurations["${variant.name}Implementation"].allDependencies.each addDep
+                                            }
                                         }
                                     }
                                 }
@@ -181,43 +185,50 @@ class FSPublishingPlugin implements Plugin<Project> {
                             from project.javadoc
                             archiveClassifier = 'javadoc'
                         }
-                        maven(MavenPublication) {
-                            from project.components.java
-                            artifact sourcesJar
-                            artifact javadocJar
-                            groupId fsPublishingExt.groupId
-                            artifactId fsPublishingExt.baseArtifactId
-                            version "${fsPublishingExt.versionName}${appendingVersionSuffix(project) ? "-${project.property('fsryan.versionSuffix')}" : ''}"
-                            pom.withXml {
-                                def root = asNode()
-                                if (fsPublishingExt.description != "") {
-                                    root.appendNode('description', fsPublishingExt.description)
-                                }
-                                root.appendNode('name', fsPublishingExt.baseArtifactId)
-                                root.appendNode('url', fsPublishingExt.siteUrl)
-                                root.children().last() + pomConfig
 
-                                // add properties
-                                def propsNode = root["properties"][0] ?: root.appendNode("properties")
-                                fsPublishingExt.extraPomProperties.forEach { k,v ->
-                                    propsNode.appendNode(k, v)
-                                }
+                        def publicationNames = ["maven"]
+                        fsPublishingExt.additionalPublications.forEach { additional ->
+                            publicationNames.add("mavenTo${additional.capitalize()}")
+                        }
+                        publicationNames.forEach { publicationName ->
+                            "$publicationName"(MavenPublication) {
+                                from project.components.java
+                                artifact sourcesJar
+                                artifact javadocJar
+                                groupId fsPublishingExt.groupId
+                                artifactId fsPublishingExt.baseArtifactId
+                                version "${fsPublishingExt.versionName}${appendingVersionSuffix(project) ? "-${project.property('fsryan.versionSuffix')}" : ''}"
+                                pom.withXml {
+                                    def root = asNode()
+                                    if (fsPublishingExt.description != "") {
+                                        root.appendNode('description', fsPublishingExt.description)
+                                    }
+                                    root.appendNode('name', fsPublishingExt.baseArtifactId)
+                                    root.appendNode('url', fsPublishingExt.siteUrl)
+                                    root.children().last() + pomConfig
 
-                                def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
-                                // Add deps that everyone has
-                                project.configurations.implementation.allDependencies.each {
-                                    if (it.group == null) {
-                                        LOGGER.debug("maven: Not adding dependency $it: group was null")
-                                        return  // Avoid empty dependency nodes
+                                    // add properties
+                                    def propsNode = root["properties"][0] ?: root.appendNode("properties")
+                                    fsPublishingExt.extraPomProperties.forEach { k,v ->
+                                        propsNode.appendNode(k, v)
                                     }
 
-                                    LOGGER.debug("maven: Adding dependency ${it.group}:${it.name}:${it.version}")
-                                    def dependencyNode = depsNode.appendNode('dependency')
-                                    dependencyNode.appendNode('groupId', it.group)
-                                    dependencyNode.appendNode('artifactId', it.name)
-                                    dependencyNode.appendNode('version', it.version)
-                                    if (it.hasProperty('optional') && it.optional) {
-                                        dependencyNode.appendNode('optional', 'true')
+                                    def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
+                                    // Add deps that everyone has
+                                    project.configurations.implementation.allDependencies.each {
+                                        if (it.group == null) {
+                                            LOGGER.debug("maven: Not adding dependency $it: group was null")
+                                            return  // Avoid empty dependency nodes
+                                        }
+
+                                        LOGGER.debug("maven: Adding dependency ${it.group}:${it.name}:${it.version}")
+                                        def dependencyNode = depsNode.appendNode('dependency')
+                                        dependencyNode.appendNode('groupId', it.group)
+                                        dependencyNode.appendNode('artifactId', it.name)
+                                        dependencyNode.appendNode('version', it.version)
+                                        if (it.hasProperty('optional') && it.optional) {
+                                            dependencyNode.appendNode('optional', 'true')
+                                        }
                                     }
                                 }
                             }
