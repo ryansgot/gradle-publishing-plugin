@@ -177,14 +177,18 @@ class FSPublishingPlugin implements Plugin<Project> {
                     } else /* assume java library */ {
 
                         def sourcesJar = project.tasks.findByName("sourcesJar") ?: project.task("sourcesJar", type: Jar,  dependsOn: 'classes') {
-                            from project.sourceSets.main.allJava
+                            from project.sourceSets.main.allSource
                             archiveClassifier = 'sources'
                         }
 
                         def javadocJar = project.tasks.findByName("javadocJar") ?: project.task("javadocJar", type: Jar, dependsOn: 'javadoc') {
-                            from project.javadoc
+                            from project.javadoc.destinationDir
                             archiveClassifier = 'javadoc'
                         }
+
+                        project.javadoc.failOnError = false
+                        project.artifacts.add("archives", sourcesJar)
+                        project.artifacts.add("archives", javadocJar)
 
                         def publicationNames = ["maven"]
                         fsPublishingExt.additionalPublications.forEach { additional ->
@@ -253,15 +257,6 @@ class FSPublishingPlugin implements Plugin<Project> {
                     }
                 }
             } else /* assume java project */ {
-                project.javadoc.failOnError false
-                def javadocJarTask = project.tasks.findByName("javadocJar")
-                def sourcesJarTask = project.tasks.findByName("sourcesJar")
-
-                project.artifacts {
-                    archives javadocJarTask
-                    archives sourcesJarTask
-                }
-
                 createReleaseAlias(project, "release", "Maven", fsPublishingExt.releaseRepoName)
                 createReleaseAlias(project, "release${fsPublishingExt.snapshotRepoName.capitalize()}", "Maven", fsPublishingExt.snapshotRepoName)
             }
