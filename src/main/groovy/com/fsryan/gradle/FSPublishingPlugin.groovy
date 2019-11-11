@@ -85,6 +85,7 @@ class FSPublishingPlugin implements Plugin<Project> {
                             }
 
                             LOGGER.debug("creating javadoc jar at destination directory: $javaDocDestDir")
+
                             def javadoc = project.task("${variant.name}Javadoc", type: Javadoc) {
                                 description "Generates Javadoc for ${variant.name}."
                                 source = variant.javaCompile.source
@@ -182,8 +183,12 @@ class FSPublishingPlugin implements Plugin<Project> {
                         }
 
                         def javadocJar = project.tasks.findByName("javadocJar") ?: project.task("javadocJar", type: Jar, dependsOn: 'javadoc') {
-                            from project.javadoc.destinationDir
+                            from (isUsingDokka(project) ? project.dokka.outputDirectory : project.javadoc.destinationDir)
                             archiveClassifier = 'javadoc'
+                        }
+
+                        if (isUsingDokka(project)) {
+                            javadocJar.dependsOn(project.dokka)
                         }
 
                         project.javadoc.failOnError = false
@@ -300,5 +305,9 @@ class FSPublishingPlugin implements Plugin<Project> {
 
     static boolean appendingVersionSuffix(Project p) {
         return p.hasProperty('fsryan.versionSuffix')
+    }
+
+    static boolean isUsingDokka(Project p) {
+        return (isAndroidProject(p) && p.plugins.hasPlugin("org.jetbrains.dokka-android")) ||  p.plugins.hasPlugin("org.jetbrains.dokka")
     }
 }
