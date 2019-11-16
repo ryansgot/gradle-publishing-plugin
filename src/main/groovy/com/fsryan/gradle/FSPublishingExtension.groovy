@@ -27,6 +27,25 @@ class FSPublishingExtension {
      */
     Map<String, String> extraPomProperties = Collections.emptyMap()
 
+    /**
+     * <p>Some dependencies that should be redirected to different artifacts
+     * than are listed in the configuration. A basic example is the case in
+     * which multiple libraries are published from the same project. If one
+     * of those projects depends upon the other, then you may want to depend
+     * upon one configuration over another.
+     * <p>A concrete example is the `release`/`debug` buildType that allows you
+     * to define different classes/resources for different configurations in an
+     * Android build. If you are publishing a library that depends upon a
+     * sibling library's `debug` configuration, then you can override the
+     * artifactId in the generated pom file by adding an entry in this map.
+     * <p>The overrides are publication-specific, so the key in the outer map
+     * is the name of the publication (use `./gradlew :lib:tasks` to find the
+     * exact names of the publications). The inner map key is from the
+     * artifactId that will be picked up as a dependency to the overridden
+     * artifact name.
+     */
+    Map<String, Map<String, String>> dependencyNameOverrides = Collections.emptyMap()
+
     FSPublishingExtension(Project project) {
         groupId = project.group
         versionName = project.name

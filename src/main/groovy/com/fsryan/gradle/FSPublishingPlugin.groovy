@@ -8,6 +8,8 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.Set
+import java.util.HashSet
 
 class FSPublishingPlugin implements Plugin<Project> {
 
@@ -143,22 +145,49 @@ class FSPublishingPlugin implements Plugin<Project> {
                                                 propsNode.appendNode(k, v)
                                             }
 
+                                            Set<String> dependenciesAdded = new HashSet<>()
+
                                             // add dependencies
                                             def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
-                                            def addDep = {
-                                                if (it.group == null) {
-                                                    LOGGER.debug("$publicationName: Not adding dependency $it: group was null")
+                                            def addDep = { dep ->
+                                                if (dep.group == null) {
+                                                    LOGGER.debug("$publicationName: Not adding dependency $dep: group was null")
+                                                    return  // Avoid empty dependency nodes
+                                                }
+                                                if (dep.name == null) {
+                                                    LOGGER.debug("$publicationName: Not adding dependency $dep: name was null")
+                                                    return  // Avoid empty dependency nodes
+                                                }
+                                                if (dep.version == null) {
+                                                    LOGGER.debug("$publicationName: Not adding dependency $dep: version was null")
                                                     return  // Avoid empty dependency nodes
                                                 }
 
-                                                LOGGER.debug("$publicationName: Adding dependency ${it.group}:${it.name}:${it.version}")
+                                                String name = dep.name
+                                                Map<String, String> publicationOverrides = fsPublishingExt.dependencyNameOverrides[publicationName]
+                                                if (publicationOverrides != null) {
+                                                    String nameOverride = publicationOverrides[name]
+                                                    if (nameOverride != null) {
+                                                        name = nameOverride
+                                                        LOGGER.debug("$publicationName: Overriding dependency $dep with name '$nameOverride'")
+                                                    }
+                                                }
+
+                                                if (dependenciesAdded.contains("${dep.group}:$name:${dep.version}")) {
+                                                    LOGGER.debug("$publicationName: not adding $dep: ALREADY ADDED")
+                                                    return
+                                                }
+
+                                                LOGGER.debug("$publicationName: Adding dependency ${dep.group}:$name:${dep.version}")
                                                 def dependencyNode = depsNode.appendNode('dependency')
-                                                dependencyNode.appendNode('groupId', it.group)
-                                                dependencyNode.appendNode('artifactId', it.name)
-                                                dependencyNode.appendNode('version', it.version)
-                                                if (it.hasProperty('optional') && it.optional) {
+                                                dependencyNode.appendNode('groupId', dep.group)
+                                                dependencyNode.appendNode('artifactId', name)
+                                                dependencyNode.appendNode('version', dep.version)
+                                                if (dep.hasProperty('optional') && dep.optional) {
                                                     dependencyNode.appendNode('optional', 'true')
                                                 }
+
+                                                dependenciesAdded.add("${dep.group}:$name:${dep.version}")
                                             }
 
                                             // Add deps that each variant has
@@ -222,22 +251,53 @@ class FSPublishingPlugin implements Plugin<Project> {
                                         propsNode.appendNode(k, v)
                                     }
 
+                                    Set<String> dependenciesAdded = new HashSet<>()
+
                                     def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
                                     // Add deps that everyone has
-                                    project.configurations.implementation.allDependencies.each {
-                                        if (it.group == null) {
-                                            LOGGER.debug("maven: Not adding dependency $it: group was null")
+                                    project.configurations.implementation.allDependencies.each { dep ->
+                                        if (dep.group == null) {
+                                            LOGGER.debug("maven: Not adding dependency $dep: group was null")
+                                            return  // Avoid empty dependency nodes
+                                        }
+                                        if (dep.group == null) {
+                                            LOGGER.debug("$publicationName: Not adding dependency $dep: group was null")
+                                            return  // Avoid empty dependency nodes
+                                        }
+                                        if (dep.name == null) {
+                                            LOGGER.debug("$publicationName: Not adding dependency $dep: name was null")
+                                            return  // Avoid empty dependency nodes
+                                        }
+                                        if (dep.version == null) {
+                                            LOGGER.debug("$publicationName: Not adding dependency $dep: version was null")
                                             return  // Avoid empty dependency nodes
                                         }
 
-                                        LOGGER.debug("maven: Adding dependency ${it.group}:${it.name}:${it.version}")
+                                        String name = dep.name
+                                        Map<String, String> publicationOverrides = fsPublishingExt.dependencyNameOverrides[publicationName]
+                                        if (publicationOverrides != null) {
+                                            String nameOverride = publicationOverrides[name]
+                                            if (nameOverride != null) {
+                                                name = nameOverride
+                                                LOGGER.debug("$publicationName: Overriding dependency $dep with name '$nameOverride'")
+                                            }
+                                        }
+
+                                        if (dependenciesAdded.contains("${dep.group}:$name:${dep.version}")) {
+                                            LOGGER.debug("$publicationName: not adding $dep: ALREADY ADDED")
+                                            return
+                                        }
+
+                                        LOGGER.debug("maven: Adding dependency ${dep.group}:${name}:${dep.version}")
                                         def dependencyNode = depsNode.appendNode('dependency')
-                                        dependencyNode.appendNode('groupId', it.group)
-                                        dependencyNode.appendNode('artifactId', it.name)
-                                        dependencyNode.appendNode('version', it.version)
-                                        if (it.hasProperty('optional') && it.optional) {
+                                        dependencyNode.appendNode('groupId', dep.group)
+                                        dependencyNode.appendNode('artifactId', name)
+                                        dependencyNode.appendNode('version', dep.version)
+                                        if (dep.hasProperty('optional') && dep.optional) {
                                             dependencyNode.appendNode('optional', 'true')
                                         }
+
+                                        dependenciesAdded.add("${dep.group}:$name:${dep.version}")
                                     }
                                 }
                             }
