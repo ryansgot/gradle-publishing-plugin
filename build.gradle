@@ -9,11 +9,21 @@ buildscript {
                     'apiKey': project.hasProperty('bintrayApiKey') ? project.getProperty('bintrayApiKey') : ''
             ]
     ]
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5"
+    }
 }
 
 apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
 
 group 'com.fsryan.gradle'
 version '0.1.0'
@@ -31,6 +41,13 @@ dependencies {
 
 def siteUrl = 'https://github.com/ryansgot/gradle-publishing-plugin'
 def pomConfig = {
+    licenses {
+        license {
+            name "The Apache Software License, Version 2.0"
+            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution "repo"
+        }
+    }
     developers {
         developer {
             id 'fsryan'
@@ -83,6 +100,29 @@ publishing {
     }
 }
 
+bintray {
+    user = project.hasProperty("bintrayUser") ? project.property("bintrayUser").toString() : ""
+    key = project.hasProperty("bintrayApiKey") ? project.property("bintrayApiKey").toString() : ""
+    publications = ["plugin"]
+    publish = false
+
+    pkg {
+        repo = "maven"
+        name = project.name
+        desc = "Gradle plugin providing tasks for publishing libraries to a maven repository"
+        websiteUrl = siteUrl
+        issueTrackerUrl = "$siteUrl/issues"
+        vcsUrl = "${siteUrl}.git"
+        publicDownloadNumbers = true
+        licenses = ['Apache-2.0']
+        labels = ['gradle', 'publishing', 'android', 'aar']
+        version {
+            name = project.version.toString()
+            vcsTag = "v${project.version}"
+        }
+    }
+}
+
 task sourcesJar(type: Jar) {
     from sourceSets.main.groovy.srcDirs
     classifier = 'sources'
@@ -91,4 +131,10 @@ task sourcesJar(type: Jar) {
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier = 'javadoc'
     from javadoc.destinationDir
+}
+
+afterEvaluate {
+    def releaseTask = project.task("release", dependsOn: ["bintrayUpload", "publishPluginPublicationToReleaseRepository"])
+    releaseTask.description = "Release to bintray and S3"
+    releaseTask.group = "Publishing"
 }
