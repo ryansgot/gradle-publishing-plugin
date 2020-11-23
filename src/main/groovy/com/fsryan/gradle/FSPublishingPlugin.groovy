@@ -3,13 +3,12 @@ package com.fsryan.gradle
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.credentials.AwsCredentials
+import org.gradle.api.artifacts.repositories.PasswordCredentials
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.Set
-import java.util.HashSet
 
 class FSPublishingPlugin implements Plugin<Project> {
 
@@ -39,20 +38,47 @@ class FSPublishingPlugin implements Plugin<Project> {
 
             project.publishing {
                 repositories {
-                    maven {
-                        name fsPublishingExt.releaseRepoName
-                        url fsPublishingExt.releaseRepoUrl
-                        credentials(AwsCredentials) {
-                            accessKey = fsPublishingExt.awsAccessKeyId
-                            secretKey = fsPublishingExt.awsSecretKey
+                    if (fsPublishingExt.useBasicCredentials) {
+                        if (fsPublishingExt.releaseRepositoryConfigured()) {
+                            maven {
+                                name fsPublishingExt.releaseRepoName
+                                url fsPublishingExt.releaseRepoUrl
+                                credentials(PasswordCredentials) {
+                                    username = fsPublishingExt.releaseBasicUser
+                                    password = fsPublishingExt.releaseBasicPassword
+                                }
+                            }
                         }
-                    }
-                    maven {
-                        name fsPublishingExt.snapshotRepoName
-                        url fsPublishingExt.snapshotRepoUrl
-                        credentials(AwsCredentials) {
-                            accessKey = fsPublishingExt.awsAccessKeyId
-                            secretKey = fsPublishingExt.awsSecretKey
+                        if (fsPublishingExt.snapshotRepositoryConfigured()) {
+                            maven {
+                                name fsPublishingExt.snapshotRepoName
+                                url fsPublishingExt.snapshotRepoUrl
+                                credentials(PasswordCredentials) {
+                                    username = fsPublishingExt.awsAccessKeyId
+                                    password = fsPublishingExt.awsSecretKey
+                                }
+                            }
+                        }
+                    } else {
+                        if (fsPublishingExt.releaseRepositoryConfigured()) {
+                            maven {
+                                name fsPublishingExt.releaseRepoName
+                                url fsPublishingExt.releaseRepoUrl
+                                credentials(AwsCredentials) {
+                                    accessKey = fsPublishingExt.awsAccessKeyId
+                                    secretKey = fsPublishingExt.awsSecretKey
+                                }
+                            }
+                        }
+                        if (fsPublishingExt.snapshotRepositoryConfigured()) {
+                            maven {
+                                name fsPublishingExt.snapshotRepoName
+                                url fsPublishingExt.snapshotRepoUrl
+                                credentials(AwsCredentials) {
+                                    accessKey = fsPublishingExt.awsAccessKeyId
+                                    secretKey = fsPublishingExt.awsSecretKey
+                                }
+                            }
                         }
                     }
                 }

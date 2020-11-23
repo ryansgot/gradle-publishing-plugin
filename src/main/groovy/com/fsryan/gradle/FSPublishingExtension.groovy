@@ -15,8 +15,40 @@ class FSPublishingExtension {
     String snapshotRepoName = 'snapshot'
     String snapshotRepoUrl
     String description = ""
+    /**
+     * Your AWS access key id--which you configure via the AWS console
+     */
     String awsAccessKeyId
+    /**
+     * Your AWS secret key--which you configure via the AWS console.
+     */
     String awsSecretKey
+    /**
+     * If you want to use basic creds, then you should use this. Additionally,
+     * you should flip {@link #useBasicCredentials} to false.
+     */
+    String releaseBasicUser
+    /**
+     * If you want to use basic creds, then you should use this. Additionally,
+     * you should flip {@link #useBasicCredentials} to false.
+     */
+    String releaseBasicPassword
+    /**
+     * If you want to use basic creds, then you should use this. Additionally,
+     * you should flip {@link #useBasicCredentials} to false.
+     */
+    String snapshotBasicUser
+    /**
+     * If you want to use basic creds, then you should use this. Additionally,
+     * you should flip {@link #useBasicCredentials} to false.
+     */
+    String snapshotBasicPassword
+    /**
+     * Set this if you want to use basic credentials instead of the
+     * previously-supported AWS credentials. Defaults to false for
+     * compatibility.
+     */
+    boolean useBasicCredentials = false
     List<String> additionalPublications = new ArrayList<>()
     /**
      * <p>If you want to add properties to the pom, then you can do so via this
@@ -49,5 +81,25 @@ class FSPublishingExtension {
     FSPublishingExtension(Project project) {
         groupId = project.group
         versionName = project.name
+    }
+
+    boolean hasReleaseBasicCreds() {
+        return releaseBasicUser != null && releaseBasicPassword != null
+    }
+
+    boolean hasAwsCreds() {
+        return awsAccessKeyId != null && awsSecretKey != null
+    }
+
+    boolean hasSnapshotBasicCreds() {
+        return snapshotBasicUser != null && snapshotBasicPassword != null
+    }
+
+    boolean releaseRepositoryConfigured() {
+        return releaseRepoUrl != null && (hasReleaseBasicCreds() || hasAwsCreds())
+    }
+
+    boolean snapshotRepositoryConfigured() {
+        return snapshotRepoUrl != null && (hasSnapshotBasicCreds() || hasAwsCreds())
     }
 }

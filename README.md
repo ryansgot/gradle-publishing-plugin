@@ -1,7 +1,7 @@
 # fsryan-gradle-publishing
 A gradle plugin for publishing libraries
 
-Currently, you can use this plugin to publish either jar or aar artifacts. This means you can write your project in Java/Kotlin/Groovy/etc. and deploy a binary artifact to an S3 repo.
+Currently, you can use this plugin to publish either jar or aar artifacts. This means you can write your project in Java/Kotlin/Groovy/etc. and deploy a binary artifact to an S3 repo or any repo you can connect to with basic authentication.
 
 ## How to use
 1. In your project's root build.gradle file, add the following:
@@ -9,12 +9,23 @@ Currently, you can use this plugin to publish either jar or aar artifacts. This 
 buildscript {
   repositories {
     jcenter()
+    // IF USING S3 as your maven backing
     maven {
       url 's3://your S3 bucket'
       authentication {
         credentials(AwsCredentials) {
           accessKey = /* your access key here, but you shouldn't store in source control */
           secretKey = /* your secret key here, but you shouldn't store in source control */
+        }
+      }
+    }
+    // IF USING some other repository as your maven backing
+    maven {
+      url 'https://your maven repository'
+      authentication {
+        credentials(PasswordCredentials) {
+          username = /* your user name--okay to store in storage control */
+          password = /* your password, but you shouldn't store in source control */
         }
       }
     }
@@ -42,6 +53,9 @@ fsPublishingConfig {
   baseArtifactId /* the name of your library */
   groupId project.group                                     // <-- the group name (such as com.fsryan)
   versionName project.version                               // <-- the version name (such as semantic version 1.0.3)
+  awsAccessKeyId = /* your access key here, but you shouldn't store in source control */
+  awsSecretKey = /* your secret key here, but you shouldn't store in source control */
+  basic
   extraPomProperties = [                                    // <-- all of the extra pom properties to add
     'myproj.gitHash': getGitHash()                          // <-- assuming you can get the git hash
   ]
