@@ -31,7 +31,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath 'com.fsryan.gradle:fsryan-gradle-publishing:x.y.z'
+    classpath 'com.fsryan.gradle:fsryan-gradle-publishing:0.1.1'
     classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'  // <-- for Android only
   }
 }
@@ -55,7 +55,11 @@ fsPublishingConfig {
   versionName project.version                               // <-- the version name (such as semantic version 1.0.3)
   awsAccessKeyId = /* your access key here, but you shouldn't store in source control */
   awsSecretKey = /* your secret key here, but you shouldn't store in source control */
-  basic
+  useBasicCredentials = false                               // <-- use true if you need to use basic credentials, false by default
+  releaseBasicUser /* the release basic username (ignored if useBasicCredentials = false) */
+  releaseBasicPassword /* the release basic password (ignored if useBasicCredentials = false) */ 
+  snapshotBasicUser /* the snapshot basic username (ignored if useBasicCredentials = false) */ 
+  snapshotBasicPassword /* the snapshot basic password (ignored if useBasicCredentials = false) */
   extraPomProperties = [                                    // <-- all of the extra pom properties to add
     'myproj.gitHash': getGitHash()                          // <-- assuming you can get the git hash
   ]
