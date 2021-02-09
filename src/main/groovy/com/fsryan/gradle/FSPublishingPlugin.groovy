@@ -24,9 +24,9 @@ class FSPublishingPlugin implements Plugin<Project> {
             def pomConfig = {
                 developers {
                     developer {
-                        id 'fsryan'
-                        name 'Ryan Scott'
-                        email 'fsryan.developer@gmail.com'
+                        id fsPublishingExt.developerId
+                        name fsPublishingExt.developerName
+                        email fsPublishingExt.developerEmail
                     }
                 }
                 scm {
@@ -127,18 +127,23 @@ class FSPublishingPlugin implements Plugin<Project> {
                                 failOnError false
                             }
 
-                            def javadocJar = project.task("${variant.name}JavadocJar", type: Jar, dependsOn: javadoc) {
-                                description "Puts Javadoc for ${variant.name} in a jar."
-                                classifier = 'javadoc'
-                                from javadoc.destinationDir
+                            def javadocJar = project.tasks.findByName("${variant.name}JavadocJar")
+                            if (javadocJar == null) {
+                                javadocJar = project.task("${variant.name}JavadocJar", type: Jar)
                             }
+                            javadocJar.dependsOn(javadoc)
+                            javadocJar.description = "Puts Javadoc for ${variant.name} in a jar."
+                            javadocJar.classifier = 'javadoc'
+                            javadocJar.from javadoc.destinationDir
 
                             LOGGER.debug("creating sources jar from ${sourceDirs}")
-                            def sourcesJar = project.task("${variant.name}SourcesJar", type: Jar) {
-                                description "Puts sources for ${variant.name} in a jar."
-                                from sourceDirs
-                                classifier = 'sources'
+                            def sourcesJar = project.tasks.findByName("${variant.name}JavadocJar")
+                            if (sourcesJar == null) {
+                                sourcesJar = project.task("${variant.name}SourcesJar", type: Jar)
                             }
+                            sourcesJar.description = "Puts sources for ${variant.name} in a jar."
+                            sourcesJar.from sourceDirs
+                            sourcesJar.classifier = 'sources'
 
                             def publicationNames = ["${project.name}${variant.name.capitalize()}"]
                             fsPublishingExt.additionalPublications.forEach { additional ->
