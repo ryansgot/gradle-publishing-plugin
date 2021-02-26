@@ -137,7 +137,7 @@ class FSPublishingPlugin implements Plugin<Project> {
                             javadocJar.from javadoc.destinationDir
 
                             LOGGER.debug("creating sources jar from ${sourceDirs}")
-                            def sourcesJar = project.tasks.findByName("${variant.name}JavadocJar")
+                            def sourcesJar = project.tasks.findByName("${variant.name}SourcesJar")
                             if (sourcesJar == null) {
                                 sourcesJar = project.task("${variant.name}SourcesJar", type: Jar)
                             }
