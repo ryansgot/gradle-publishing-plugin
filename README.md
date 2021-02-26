@@ -31,7 +31,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath 'com.fsryan.gradle:fsryan-gradle-publishing:0.1.1'
+    classpath 'com.fsryan.gradle:fsryan-gradle-publishing:0.1.2'
     classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'  // <-- for Android only
   }
 }
