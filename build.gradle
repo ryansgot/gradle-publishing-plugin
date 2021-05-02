@@ -3,10 +3,6 @@ buildscript {
             'aws': [
                     'accessKeyId': project.hasProperty("awsMavenAccessKey") ? project.property("awsMavenAccessKey") : "${System.env.AWS_ACCES_KEY_ID}",
                     'secretKey': project.hasProperty("awsMavenSecretKey") ? project.property("awsMavenSecretKey") : "${System.env.AWS_SECRET_KEY}",
-            ],
-            'bintray': [
-                    'user': project.hasProperty('bintrayUser') ? project.getProperty('bintrayUser') : '',
-                    'apiKey': project.hasProperty('bintrayApiKey') ? project.getProperty('bintrayApiKey') : ''
             ]
     ]
 
@@ -16,17 +12,16 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5"
     }
 }
 
 apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
+apply plugin: 'signing'
 
 group 'com.fsryan.gradle'
-version '0.1.2'
+version '0.1.3'
 
 repositories {
     jcenter()
@@ -40,32 +35,11 @@ dependencies {
 }
 
 def siteUrl = 'https://github.com/ryansgot/gradle-publishing-plugin'
-def pomConfig = {
-    licenses {
-        license {
-            name "The Apache Software License, Version 2.0"
-            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
-            distribution "repo"
-        }
-    }
-    developers {
-        developer {
-            id 'fsryan'
-            name 'Ryan Scott'
-            email 'fsryan.developer@gmail.com'
-        }
-    }
-    scm {
-        connection "${siteUrl}.git"
-        developerConnection "${siteUrl}.git"
-        url siteUrl
-    }
-}
 
 publishing {
     repositories {
         maven {
-            name 'release'
+            name 'releaseS3'
             url 's3://repo.fsryan.com/release'
             credentials(AwsCredentials) {
                 accessKey = keys.aws.accessKeyId
@@ -73,11 +47,27 @@ publishing {
             }
         }
         maven {
-            name 'snapshot'
+            name 'snapshotS3'
             url 's3://repo.fsryan.com/snapshot'
             credentials(AwsCredentials) {
                 accessKey = keys.aws.accessKeyId
                 secretKey = keys.aws.secretKey
+            }
+        }
+        maven {
+            name = "releaseOSSRH"
+            url 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+            credentials {
+                username =  project.findProperty("com.fsryan.ossrh.release.username") ?: ""
+                password =  project.findProperty("com.fsryan.ossrh.release.password") ?: ""
+            }
+        }
+        maven {
+            name = "snapshotOSSRH"
+            url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+            credentials {
+                username =  project.findProperty("com.fsryan.ossrh.snapshot.username") ?: ""
+                password =  project.findProperty("com.fsryan.ossrh.snapshot.password") ?: ""
             }
         }
     }
@@ -89,36 +79,36 @@ publishing {
             groupId project.group
             artifactId 'fsryan-gradle-publishing'
             version project.version
-            pom.withXml {
-                def root = asNode()
-                root.appendNode('description', 'Gradle plugin providing tasks for publishing libraries to a maven repository')
-                root.appendNode('name', 'fsryan-gradle-publishing')
-                root.appendNode('url', siteUrl)
-                root.children().last() + pomConfig
+
+            pom {
+                licenses {
+                    license {
+                        name = "The Apache Software License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                        distribution = "repo"
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'fsryan'
+                        name = 'Ryan Scott'
+                        email = 'fsryan.developer@gmail.com'
+                    }
+                }
+                scm {
+                    connection = "${siteUrl}.git".toString()
+                    developerConnection = "${siteUrl}.git".toString()
+                    url = siteUrl
+                }
+                withXml {
+                    def root = asNode()
+                    root.appendNode('description', 'Gradle plugin providing tasks for publishing libraries to a maven repository')
+                    root.appendNode('packaging', 'jar')
+                    root.appendNode('name', 'fsryan-gradle-publishing')
+                    root.appendNode('url', siteUrl)
+                    root.children().last()
+                }
             }
-        }
-    }
-}
-
-bintray {
-    user = project.hasProperty("bintrayUser") ? project.property("bintrayUser").toString() : ""
-    key = project.hasProperty("bintrayApiKey") ? project.property("bintrayApiKey").toString() : ""
-    publications = ["plugin"]
-    publish = false
-
-    pkg {
-        repo = "maven"
-        name = project.name
-        desc = "Gradle plugin providing tasks for publishing libraries to a maven repository"
-        websiteUrl = siteUrl
-        issueTrackerUrl = "$siteUrl/issues"
-        vcsUrl = "${siteUrl}.git"
-        publicDownloadNumbers = true
-        licenses = ['Apache-2.0']
-        labels = ['gradle', 'publishing', 'android', 'aar']
-        version {
-            name = project.version.toString()
-            vcsTag = "v${project.version}"
         }
     }
 }
@@ -133,8 +123,25 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
+signing {
+
+    if (project.hasProperty("signing.keyId")) {
+        if (project.hasProperty("signing.password")) {
+            if (project.hasProperty("signing.secretKeyRingFile")) {
+                sign(publishing.publications)
+            } else {
+                println("Missing signing.secretKeyRingFile: cannot sign ${project.name}")
+            }
+        } else {
+            println("Missing signing.password: cannot sign ${project.name}")
+        }
+    } else {
+        println("Missing signing.keyId: cannot sign ${project.name}")
+    }
+}
+
 afterEvaluate {
-    def releaseTask = project.task("release", dependsOn: ["bintrayUpload", "publishPluginPublicationToReleaseRepository"])
-    releaseTask.description = "Release to bintray and S3"
+    def releaseTask = project.task("release", dependsOn: ["publishPluginPublicationToReleaseOSSRHRepository", "publishPluginPublicationToReleaseS3Repository"])
+    releaseTask.description = "Release to OSSRH and S3"
     releaseTask.group = "Publishing"
 }

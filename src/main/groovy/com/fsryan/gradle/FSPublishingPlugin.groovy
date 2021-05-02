@@ -54,8 +54,8 @@ class FSPublishingPlugin implements Plugin<Project> {
                                 name fsPublishingExt.snapshotRepoName
                                 url fsPublishingExt.snapshotRepoUrl
                                 credentials(PasswordCredentials) {
-                                    username = fsPublishingExt.awsAccessKeyId
-                                    password = fsPublishingExt.awsSecretKey
+                                    username = fsPublishingExt.snapshotBasicUser
+                                    password = fsPublishingExt.snapshotBasicPassword
                                 }
                             }
                         }
@@ -161,6 +161,16 @@ class FSPublishingPlugin implements Plugin<Project> {
 
                                     pom {
                                         packaging 'aar'
+
+                                        licenses {
+                                            license {
+                                                name = fsPublishingExt.licenseName
+                                                url = fsPublishingExt.licenseUrl
+                                                distribution = fsPublishingExt.licenseDistribution
+                                                comments = fsPublishingExt.licenseComments
+                                            }
+                                        }
+
                                         withXml {
                                             def root = asNode()
                                             if (fsPublishingExt.description != "") {
@@ -267,6 +277,16 @@ class FSPublishingPlugin implements Plugin<Project> {
                                 groupId fsPublishingExt.groupId
                                 artifactId fsPublishingExt.baseArtifactId
                                 version "${fsPublishingExt.versionName}${appendingVersionSuffix(project) ? "-${project.property('fsryan.versionSuffix')}" : ''}"
+
+                                pom.licenses {
+                                    license {
+                                        name = fsPublishingExt.licenseName
+                                        url = fsPublishingExt.licenseUrl
+                                        distribution = fsPublishingExt.licenseDistribution
+                                        comments = fsPublishingExt.licenseComments
+                                    }
+                                }
+
                                 pom.withXml {
                                     def root = asNode()
                                     if (fsPublishingExt.description != "") {
@@ -341,12 +361,8 @@ class FSPublishingPlugin implements Plugin<Project> {
                 project.android.libraryVariants.all { variant ->
                     def publicationName = "${project.name.capitalize()}${variant.name.capitalize()}"
                     if (variant.buildType.name == 'debug') {
-                        // We never want to publish a debug variant to the
-                        // release repository. This will help us to have a
-                        // clean release repository that is free of any
-                        // developer-only builds.
-                        disablePublishTask(project, publicationName, fsPublishingExt.releaseRepoName)
-                        createReleaseAlias(project, "release${variant.name.capitalize()}", publicationName, fsPublishingExt.snapshotRepoName)
+                        createReleaseAlias(project, "release${variant.name.capitalize()}", publicationName, fsPublishingExt.releaseRepoName)
+                        createReleaseAlias(project, "release${variant.name.capitalize()}${fsPublishingExt.snapshotRepoName.capitalize()}", publicationName, fsPublishingExt.snapshotRepoName)
                     } else {
                         createReleaseAlias(project, "release${variant.name.capitalize().replace("Release", "")}", publicationName, fsPublishingExt.releaseRepoName)
                         createReleaseAlias(project, "release${variant.name.capitalize().replace("Release", "")}${fsPublishingExt.snapshotRepoName.capitalize()}", publicationName, fsPublishingExt.snapshotRepoName)
