@@ -15,6 +15,10 @@ class FSPublishingExtension {
     String snapshotRepoName = 'snapshot'
     String snapshotRepoUrl
     String description = ""
+    String licenseName = ""
+    String licenseUrl = ""
+    String licenseDistribution = ""
+    String licenseComments = ""
     /**
      * Your AWS access key id--which you configure via the AWS console
      */
