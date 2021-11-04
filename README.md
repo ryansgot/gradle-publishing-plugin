@@ -5,7 +5,6 @@ Currently, you can use this plugin to publish either jar or aar artifacts. This 
 
 ## Compability
 
-|--|--|--|
 | Gradle Version | Gradle Publishing Version | Dokka Version (optional) |
 |--|--|--|
 | <7.0 | Any | <1.0 |
