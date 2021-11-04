@@ -3,6 +3,14 @@ A gradle plugin for publishing libraries
 
 Currently, you can use this plugin to publish either jar or aar artifacts. This means you can write your project in Java/Kotlin/Groovy/etc. and deploy a binary artifact to an S3 repo or any repo you can connect to with basic authentication.
 
+## Compability
+
+|--|--|--|
+| Gradle Version | Gradle Publishing Version | Dokka Version (optional) |
+|--|--|--|
+| <7.0 | Any | <1.0 |
+| 7.0+ | 0.2+ | 1.0+ |
+
 ## How to use
 1. In your project's root build.gradle file, add the following:
 ```groovy
@@ -31,8 +39,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath 'com.fsryan.gradle:fsryan-gradle-publishing:0.1.3'
-    classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'  // <-- for Android only
+    classpath 'com.fsryan.gradle:fsryan-gradle-publishing:0.2.0'
   }
 }
 ```

@@ -119,7 +119,6 @@ class FSPublishingPlugin implements Plugin<Project> {
                                 source = variant.javaCompile.source
                                 destinationDir = javaDocDestDir
                                 classpath += project.files(project.android.getBootClasspath().join(File.pathSeparator))
-                                classpath += project.files(project.configurations.compile)
                                 options.links("http://docs.oracle.com/javase/7/docs/api/")
                                 options.links("http://d.android.com/reference/")
                                 exclude '**/BuildConfig.java'
@@ -253,12 +252,12 @@ class FSPublishingPlugin implements Plugin<Project> {
                         }
 
                         def javadocJar = project.tasks.findByName("javadocJar") ?: project.task("javadocJar", type: Jar, dependsOn: 'javadoc') {
-                            from (isUsingDokka(project) ? project.dokka.outputDirectory : project.javadoc.destinationDir)
+                            from (isUsingDokka(project) ? project.dokkaJavadoc.outputDirectory : project.javadoc.destinationDir)
                             archiveClassifier = 'javadoc'
                         }
 
                         if (isUsingDokka(project)) {
-                            javadocJar.dependsOn(project.dokka)
+                            javadocJar.dependsOn(project.dokkaJavadoc)
                         }
 
                         project.javadoc.failOnError = false
