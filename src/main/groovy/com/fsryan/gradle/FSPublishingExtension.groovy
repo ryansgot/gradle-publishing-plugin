@@ -82,6 +82,13 @@ class FSPublishingExtension {
      */
     Map<String, Map<String, String>> dependencyNameOverrides = Collections.emptyMap()
 
+    /**
+     * Suppose you do not want a publication to be created for a variant.
+     * Specify the name of all variants you DO NOT want to publish here, and no
+     * publication will be created for that variant.
+     */
+    Set<String> filteredAndroidVariants = Collections.emptySet()
+
     FSPublishingExtension(Project project) {
         groupId = project.group
         versionName = project.name
