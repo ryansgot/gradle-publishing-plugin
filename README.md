@@ -38,7 +38,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath 'com.fsryan.gradle:fsryan-gradle-publishing:0.2.0'
+    classpath 'com.fsryan.gradle:fsryan-gradle-publishing:0.3.0'
   }
 }
 ```
@@ -71,6 +71,9 @@ fsPublishingConfig {
   ]
   // goes in the description field of the pom
   description = /* A short description of the artifact you're publishing */
+  filteredAndroidVariants = [
+    'debug' // assuming you have an android project and you DO NOT want to publish the debug variant
+  ] // will default to an empty set
 }
 ```
 There are other properties you can configure via the `fsPublishingConfig` gradle extension. See [FSPublishingExtension](src/main/groovy/com/fsryan/gradle/FSPublishingExtension.groovy) for more details.
